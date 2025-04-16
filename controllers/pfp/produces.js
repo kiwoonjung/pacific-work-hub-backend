@@ -31,7 +31,7 @@ export const createProduceItem = async (req, res) => {
 
     res.status(201).json(result.rows[0]);
   } catch (error) {
-    console.error("Error during create product item", error);
+    console.error("Error during create produce item", error);
     res.status(500).json({ error: error.message });
   }
 };
