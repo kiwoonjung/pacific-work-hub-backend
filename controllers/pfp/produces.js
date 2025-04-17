@@ -13,11 +13,17 @@ export const createProduceItem = async (req, res) => {
       package_type,
     } = req.body;
 
-    const result = await pool.query(
+    if (!item_no || !common_name) {
+      return res
+        .status(400)
+        .json({ error: "Item No and Common Name are required." });
+    }
+
+    // Insert new item
+    await pool.query(
       `INSERT INTO pfp_produce_items 
-          (item_no, common_name, origin, size, weight, scientific_name, package_type)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
-          RETURNING *`,
+        (item_no, common_name, origin, size, weight, scientific_name, package_type)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         item_no,
         common_name,
@@ -29,9 +35,14 @@ export const createProduceItem = async (req, res) => {
       ]
     );
 
-    res.status(201).json(result.rows[0]);
+    // Get the updated list
+    const result = await pool.query(
+      `SELECT * FROM pfp_produce_items ORDER BY id DESC`
+    );
+
+    res.status(201).json(result.rows);
   } catch (error) {
-    console.error("Error during create product item", error);
+    console.error("Error during create produce item", error);
     res.status(500).json({ error: error.message });
   }
 };
