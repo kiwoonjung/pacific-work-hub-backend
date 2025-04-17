@@ -13,11 +13,18 @@ export const createProduceItem = async (req, res) => {
       package_type,
     } = req.body;
 
+    // Basic validation
+    if (!item_no || !common_name) {
+      return res
+        .status(400)
+        .json({ error: "Item No and Common Name are required." });
+    }
+
     const result = await pool.query(
       `INSERT INTO pfp_produce_items 
-          (item_no, common_name, origin, size, weight, scientific_name, package_type)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
-          RETURNING *`,
+        (item_no, common_name, origin, size, weight, scientific_name, package_type)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *`,
       [
         item_no,
         common_name,
