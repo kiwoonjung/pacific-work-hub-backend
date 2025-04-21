@@ -44,7 +44,7 @@ export const createProduceItem = async (req, res) => {
       size,
       weight,
       scientific_name,
-      package_type,
+      type_of_package,
     } = req.body;
 
     if (!item_no || !common_name) {
@@ -56,7 +56,7 @@ export const createProduceItem = async (req, res) => {
     // Insert new item
     await pool.query(
       `INSERT INTO pfp_produce_items 
-        (item_no, common_name, origin, size, weight, scientific_name, package_type)
+        (item_no, common_name, origin, size, weight, scientific_name, type_of_package)
         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         item_no,
@@ -65,7 +65,7 @@ export const createProduceItem = async (req, res) => {
         size,
         weight,
         scientific_name,
-        package_type,
+        type_of_package,
       ]
     );
 
