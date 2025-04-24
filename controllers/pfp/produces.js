@@ -74,7 +74,7 @@ export const createProduceItem = async (req, res) => {
       `SELECT * FROM pfp_produce_items ORDER BY id DESC`
     );
 
-    res.status(201).json(result.rows);
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error("Error during create produce item", error);
     res.status(500).json({ error: error.message });
