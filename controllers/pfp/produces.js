@@ -1,26 +1,46 @@
 import pool from "../../config/db.js";
 
-// Get produce items
 export const getProduceItems = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1; // default to page 1
-    const limit = parseInt(req.query.limit) || 10; // default to 10 items per page
-    const offset = (page - 1) * limit;
+    const page = parseInt(req.query.page) || 0;
+    const perPage = parseInt(req.query.perPage) || 10;
 
-    // Get total number of items
+    // Get total number of items first
     const countResult = await pool.query(
       `SELECT COUNT(*) FROM pfp_produce_items`
     );
     const totalItems = parseInt(countResult.rows[0].count);
-    const totalPages = Math.ceil(totalItems / limit);
 
-    // Get paginated items
+    // Calculate total pages correctly
+    const totalPages = Math.ceil(totalItems / perPage);
+
+    // Calculate offset correctly for the last page
+    const offset = Math.min(page * perPage, totalItems - perPage);
+
+    // console.log("Pagination details:", {
+    //   page,
+    //   perPage,
+    //   offset,
+    //   totalItems,
+    //   totalPages,
+    // });
+
+    // Get paginated items with proper ordering
     const itemsResult = await pool.query(
-      `SELECT * FROM pfp_produce_items
-       ORDER BY id DESC
-       LIMIT $1 OFFSET $2`,
-      [limit, offset]
+      `WITH ordered_items AS (
+         SELECT *, 
+                ROW_NUMBER() OVER (ORDER BY id DESC) as row_num
+         FROM pfp_produce_items
+       )
+       SELECT * FROM ordered_items
+       WHERE row_num > $1 AND row_num <= $2
+       ORDER BY id DESC`,
+      [offset, offset + perPage]
     );
+
+    // Log the IDs we're returning
+    const returnedIds = itemsResult.rows.map((row) => row.id);
+    // console.log("Returned IDs:", returnedIds);
 
     res.status(200).json({
       currentPage: page,
@@ -33,7 +53,6 @@ export const getProduceItems = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 // Create a produce item
 export const createProduceItem = async (req, res) => {
   try {
@@ -69,12 +88,27 @@ export const createProduceItem = async (req, res) => {
       ]
     );
 
-    // Get the updated list
+    // Get the updated list with pagination
     const result = await pool.query(
-      `SELECT * FROM pfp_produce_items ORDER BY id DESC`
+      `SELECT * FROM pfp_produce_items ORDER BY id DESC LIMIT $1 OFFSET $2`,
+      [
+        req.query.perPage || 10,
+        ((req.query.page || 1) - 1) * (req.query.perPage || 10),
+      ]
     );
 
-    res.status(201).json(result.rows[0]);
+    // Get total count for pagination
+    const countResult = await pool.query(
+      "SELECT COUNT(*) FROM pfp_produce_items"
+    );
+
+    res.status(201).json({
+      items: result.rows,
+      totalItems: parseInt(countResult.rows[0].count),
+      totalPages: Math.ceil(
+        parseInt(countResult.rows[0].count) / (req.query.perPage || 10)
+      ),
+    });
   } catch (error) {
     console.error("Error during create produce item", error);
     res.status(500).json({ error: error.message });
