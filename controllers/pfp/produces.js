@@ -82,8 +82,9 @@ export const createProduceItem = async (req, res) => {
       origin,
       size,
       weight,
+      weight_unit,
       scientific_name,
-      type_of_package,
+      package_type,
     } = req.body;
 
     if (!item_no || !common_name) {
@@ -95,16 +96,17 @@ export const createProduceItem = async (req, res) => {
     // Insert new item
     await pool.query(
       `INSERT INTO pfp_produce_items 
-        (item_no, common_name, origin, size, weight, scientific_name, type_of_package)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        (item_no, common_name, origin, size, weight, weight_unit, scientific_name, package_type)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
       [
         item_no,
         common_name,
         origin,
         size,
         weight,
+        weight_unit,
         scientific_name,
-        type_of_package,
+        package_type,
       ]
     );
 
@@ -146,7 +148,7 @@ export const updateProduceItem = async (req, res) => {
       size,
       weight,
       scientific_name,
-      type_of_package,
+      package_type,
     } = req.body;
 
     console.log(req.body);
@@ -166,7 +168,7 @@ export const updateProduceItem = async (req, res) => {
           size = $4,
           weight = $5,
           scientific_name = $6,
-          type_of_package = $7
+          package_type = $7
         WHERE id = $8`,
       [
         item_no,
@@ -175,7 +177,7 @@ export const updateProduceItem = async (req, res) => {
         size,
         weight,
         scientific_name,
-        type_of_package,
+        package_type,
         id,
       ]
     );
