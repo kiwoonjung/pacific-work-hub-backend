@@ -53,6 +53,26 @@ export const getProduceItems = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Get a single item
+export const getSingleProduceItem = async (req, res) => {
+  try {
+    const { id } = req.params; // <-- Change from req.body to req.params
+
+    const itemResult = await pool.query(
+      `SELECT * FROM pfp_produce_items WHERE id = $1`,
+      [id]
+    );
+
+    res.status(200).json({
+      data: itemResult.rows[0], // Usually you want the row, not the metadata
+    });
+  } catch (error) {
+    console.error("Error during get single produce item", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Create a produce item
 export const createProduceItem = async (req, res) => {
   try {
@@ -126,15 +146,15 @@ export const updateProduceItem = async (req, res) => {
       size,
       weight,
       scientific_name,
-      package_type,
+      type_of_package,
     } = req.body;
 
-    console.log(req);
+    console.log(req.body);
 
     if (!id || !item_no || !common_name) {
       return res
         .status(400)
-        .json({ error: "ID, Item No, and Common Name are required." });
+        .json({ error: "Item No, and Common Name are required." });
     }
 
     // Update the item
@@ -146,7 +166,7 @@ export const updateProduceItem = async (req, res) => {
           size = $4,
           weight = $5,
           scientific_name = $6,
-          package_type = $7
+          type_of_package = $7
         WHERE id = $8`,
       [
         item_no,
@@ -155,7 +175,7 @@ export const updateProduceItem = async (req, res) => {
         size,
         weight,
         scientific_name,
-        package_type,
+        type_of_package,
         id,
       ]
     );
