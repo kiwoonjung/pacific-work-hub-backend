@@ -193,3 +193,28 @@ export const updateProduceItem = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Delete a single produce item
+export const deleteSingleProduceItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: "Item ID is required." });
+    }
+
+    const result = await pool.query(
+      `DELETE FROM pfp_produce_items WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Item not found." });
+    }
+
+    res.status(200).json({ message: "The item was deleted!" });
+  } catch (error) {
+    console.error("Error during delete single produce item", error);
+    res.status(500).json({ error: error.message });
+  }
+};
