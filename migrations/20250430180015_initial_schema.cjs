@@ -9,8 +9,8 @@ exports.up = function (knex) {
           table.text("common_name");
           table.text("origin");
           table.text("size");
-          table.text("weight");
-          table.integer("weight_unit");
+          table.integer("weight");
+          table.text("weight_unit");
           table.text("scientific_name");
           table.text("package_type");
         });
