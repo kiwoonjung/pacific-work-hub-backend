@@ -147,11 +147,10 @@ export const updateProduceItem = async (req, res) => {
       origin,
       size,
       weight,
+      weight_unit,
       scientific_name,
       package_type,
     } = req.body;
-
-    console.log(req.body);
 
     if (!id || !item_no || !common_name) {
       return res
@@ -167,15 +166,17 @@ export const updateProduceItem = async (req, res) => {
           origin = $3,
           size = $4,
           weight = $5,
-          scientific_name = $6,
-          package_type = $7
-        WHERE id = $8`,
+          weight_unit =$6,
+          scientific_name = $7,
+          package_type = $8
+        WHERE id = $9`,
       [
         item_no,
         common_name,
         origin,
         size,
         weight,
+        weight_unit,
         scientific_name,
         package_type,
         id,

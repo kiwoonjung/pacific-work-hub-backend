@@ -4,6 +4,7 @@ import cors from "cors";
 import logger from "./middleware/logger.js";
 
 import produceRoutes from "./routes/produces.js";
+import userRoutes from "./routes/users.js";
 
 dotenv.config();
 
@@ -22,6 +23,8 @@ app.get("/", async (req, res) => {
 });
 
 app.use("/api/pfp/produce", produceRoutes);
+
+app.use("/api/user", userRoutes);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running on http://localhost:${process.env.PORT}`);
