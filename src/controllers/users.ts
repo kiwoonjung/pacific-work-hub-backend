@@ -1,6 +1,7 @@
-import pool from "../config/db.js";
+import pool from "../config/db";
+import { Request, Response } from "express";
 
-export const createUser = async (req, res) => {
+export const createUser = async (req: Request, res: Response) => {
   try {
     const {
       azure_id,
@@ -12,12 +13,11 @@ export const createUser = async (req, res) => {
       department,
     } = req.body;
 
-    console.log(req.body);
-
     if (!azure_id || !first_name || !last_name) {
-      return res
+      res
         .status(400)
         .json({ error: "Azure Id, First Name and Last Name are required." });
+      return;
     }
 
     const result = await pool.query(
@@ -40,7 +40,8 @@ export const createUser = async (req, res) => {
       user: result.rows[0],
     });
   } catch (error) {
+    const err = error as Error;
     console.error("Error during upsert user", error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: err.message });
   }
 };
