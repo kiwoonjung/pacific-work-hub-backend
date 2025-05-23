@@ -1,10 +1,10 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import logger from "./middleware/logger.js";
+import logger from "./middleware/logger";
 
-import userRoutes from "./routes/user.js";
-import produceRoutes from "./routes/produces.js";
+import userRoutes from "./routes/users";
+import produceRoutes from "./routes/produce";
 
 dotenv.config();
 
@@ -17,13 +17,13 @@ app.get("/", async (req, res) => {
   try {
     res.status(201).json("Hello World");
   } catch (error) {
-    console.error("Error Get:", err);
+    console.error("Error Get:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-app.use("/api/pfp/produce", produceRoutes);
-app.use("/api/user", userRoutes);
+app.use("/api/pfp/produces", produceRoutes);
+app.use("/api/users", userRoutes);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running on http://localhost:${process.env.PORT}`);
