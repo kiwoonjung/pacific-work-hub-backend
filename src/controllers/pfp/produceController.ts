@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { QueryResult } from "pg";
-import pool from "../../config/db";
+import db from "../../config/knex";
 
 // import { ProduceRow } from "types/produce.js";
 
@@ -9,11 +9,15 @@ export const getProduces = async (
   res: Response
 ): Promise<void> => {
   try {
-    const itemsResult = await pool.query(
-      `SELECT * FROM pfp_produce_items
-        ORDER BY created_at DESC`
-    );
-    res.status(200).json({ items: itemsResult.rows });
+    const { status } = req.query;
+    let query = db("pfp_produce_items")
+      .select("*")
+      .orderBy("created_at", "desc");
+    if (status) {
+      query = query.where({ status });
+    }
+    const items = await query;
+    res.status(200).json({ data: items });
   } catch (error: unknown) {
     const err = error as Error;
     console.error("Error during get produce items", error);
@@ -28,15 +32,8 @@ export const getProduceById = async (
 ): Promise<void> => {
   try {
     const id = req.params.id;
-
-    const itemResult = await pool.query(
-      `SELECT * FROM pfp_produce_items WHERE id = $1`,
-      [id]
-    );
-
-    res.status(200).json({
-      data: itemResult.rows[0],
-    });
+    const item = await db("pfp_produce_items").where({ id }).first();
+    res.status(200).json({ data: item });
   } catch (error: unknown) {
     const err = error as Error;
     console.error("Error during get single produce item", error);
@@ -59,6 +56,7 @@ export const createProduce = async (
       weight_unit,
       scientific_name,
       package_type,
+      status,
     } = req.body;
 
     if (!item_no || !common_name) {
@@ -67,11 +65,8 @@ export const createProduce = async (
     }
 
     // Insert new item
-    await pool.query(
-      `INSERT INTO pfp_produce_items 
-        (item_no, common_name, origin, size, weight, weight_unit, scientific_name, package_type)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [
+    const [produceId] = await db("pfp_produce_items")
+      .insert({
         item_no,
         common_name,
         origin,
@@ -80,15 +75,11 @@ export const createProduce = async (
         weight_unit,
         scientific_name,
         package_type,
-      ]
-    );
+        status,
+      })
+      .returning("id");
 
-    // Get the updated list with pagination
-    const result = await pool.query(
-      `SELECT * FROM pfp_produce_items ORDER BY created_at DESC`
-    );
-
-    res.status(201).json({ produceId: result.rows[0].id });
+    res.status(201).json({ data: { id: produceId.id || produceId } });
   } catch (error) {
     const err = error as Error;
     console.error("Error during create produce item", error);
@@ -103,48 +94,32 @@ export const updateProduce = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const {
-      item_no,
-      common_name,
-      origin,
-      size,
-      weight,
-      weight_unit,
-      scientific_name,
-      package_type,
-    } = req.body;
+    const allowedFields = [
+      "item_no",
+      "common_name",
+      "origin",
+      "size",
+      "weight",
+      "weight_unit",
+      "scientific_name",
+      "package_type",
+      "status",
+    ];
+    const updateFields: Record<string, any> = {};
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updateFields[field] = req.body[field];
+      }
+    });
 
-    if (!item_no || !common_name) {
-      res.status(400).json({ error: "Item No, and Common Name are required." });
+    if (Object.keys(updateFields).length === 0) {
+      res.status(400).json({ error: "No valid fields provided for update." });
       return;
     }
 
-    // Update the item
-    await pool.query(
-      `UPDATE pfp_produce_items
-        SET item_no = $1,
-          common_name = $2,
-          origin = $3,
-          size = $4,
-          weight = $5,
-          weight_unit= $6,
-          scientific_name = $7,
-          package_type = $8
-        WHERE id = $9`,
-      [
-        item_no,
-        common_name,
-        origin,
-        size,
-        weight,
-        weight_unit,
-        scientific_name,
-        package_type,
-        id,
-      ]
-    );
+    await db("pfp_produce_items").where({ id }).update(updateFields);
 
-    res.status(200).json({ message: "Site updated successfully" });
+    res.status(200).json({ data: { message: "Produce updated successfully" } });
   } catch (error) {
     const err = error as Error;
     console.error("Error during update produce item", error);
@@ -165,17 +140,17 @@ export const deleteProduceById = async (
       return;
     }
 
-    const result = await pool.query(
-      `DELETE FROM pfp_produce_items WHERE id = $1 RETURNING *`,
-      [id]
-    );
+    const deleted = await db("pfp_produce_items")
+      .where({ id })
+      .del()
+      .returning("*");
 
-    if (result.rowCount === 0) {
+    if (!deleted.length) {
       res.status(404).json({ error: "Item not found." });
       return;
     }
 
-    res.status(200).json({ message: "The item was deleted!" });
+    res.status(200).json({ data: { message: "The item was deleted!" } });
   } catch (error) {
     const err = error as Error;
     console.error("Error during delete single produce item", error);
@@ -196,22 +171,14 @@ export const deleteProducesBatch = async (
       return;
     }
 
-    // Check user existence
-    // const userResult = await pool.query(`SELECT id FROM users WHERE id = $1`, [
-    //   userId,
-    // ]);
-    // if (userResult.rows.length === 0) {
-    //   res.status(404).json({ error: "User not found" });
-    //   return;
-    // }
-
     // Batch delete
-    const deleteQuery = `DELETE FROM pfp_produce_items WHERE id = ANY($1::uuid[])`;
-    await pool.query(deleteQuery, [ids]);
+    await db("pfp_produce_items").whereIn("id", ids).del();
 
     res
       .status(200)
-      .json({ message: "Produces deleted successfully", count: ids.length });
+      .json({
+        data: { message: "Produces deleted successfully", count: ids.length },
+      });
   } catch (error) {
     const err = error as Error;
     console.error("Error during batch delete:", error);

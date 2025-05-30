@@ -10,6 +10,12 @@ import {
 
 const router = express.Router();
 
+/* GET all active produce items */
+router.get("/active", (req, res, next) => {
+  req.query.status = "active";
+  getProduces(req, res).catch(next);
+});
+
 /* GET all produce items */
 router.get("/", getProduces);
 
