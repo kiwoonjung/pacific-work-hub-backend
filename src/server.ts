@@ -3,8 +3,9 @@ import dotenv from "dotenv";
 import cors from "cors";
 import logger from "./middleware/logger";
 
-import userRoutes from "./routes/users";
-import produceRoutes from "./routes/produce";
+import userRoutes from "./routes/usersRoutes";
+import produceRoutes from "./routes/produceRoutes";
+import poRoutes from "./routes/purchaseOrderRoute";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.get("/", async (req, res) => {
 
 app.use("/api/pfp/produces", produceRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/pfp/pos", poRoutes);
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running on http://localhost:${process.env.PORT}`);
