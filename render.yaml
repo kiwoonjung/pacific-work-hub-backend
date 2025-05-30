@@ -2,7 +2,7 @@ services:
   - type: web
     name: pacific-work-hub-backend
     env: node
-    buildCommand: yarn build
+    buildCommand: yarn install && yarn build
     startCommand: yarn start
     envVars:
       - key: NODE_ENV
@@ -16,4 +16,4 @@ services:
       - key: DB_USER
         sync: false
       - key: DB_PASSWORD
-        sync: false 
+        sync: false
